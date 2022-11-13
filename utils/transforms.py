@@ -12,11 +12,12 @@ def get_train_test_set(train_dir, test_dir, train_anno, test_anno, train_label=N
     crop_size = args.crop_size
     
     train_data_transform = transforms.Compose([transforms.Resize((scale_size, scale_size)),
-                                               transforms.RandomChoice([transforms.RandomCrop(640),
-                                               transforms.RandomCrop(576),
+                                               transforms.RandomChoice([
                                                transforms.RandomCrop(512), 
+                                               transforms.RandomCrop(448),
                                                transforms.RandomCrop(384),
-                                               transforms.RandomCrop(320)]),
+                                               transforms.RandomCrop(320),
+                                               transforms.RandomCrop(256),]),
                                                transforms.Resize((crop_size, crop_size)),
                                                transforms.ToTensor(),
                                                normalize])
@@ -45,9 +46,12 @@ def get_train_test_set(train_dir, test_dir, train_anno, test_anno, train_label=N
     train_loader = DataLoader(dataset=train_set,
                               num_workers=args.workers,
                               batch_size=args.batch_size,
+                              pin_memory=True,
                               shuffle = True)
+                              
     test_loader = DataLoader(dataset=test_set,
                               num_workers=args.workers,
                               batch_size=args.batch_size,
+                              pin_memory=True,
                               shuffle = False)
     return train_loader, test_loader

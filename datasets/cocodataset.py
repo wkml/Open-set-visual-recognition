@@ -12,7 +12,6 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 
 class COCO2014(data.Dataset):
-
     def __init__(self, mode,
                  image_dir, anno_path, labels_path,
                  input_transform=None):
