@@ -29,8 +29,8 @@ def get_train_test_set(train_dir, test_dir, train_anno, test_anno, train_label=N
     
  
     if args.dataset == 'COCO':  
-        train_set = COCO2014('train', train_dir, train_anno,train_label, train_data_transform)
-        test_set = COCO2014('val', test_dir, test_anno, test_label,test_data_transform)
+        train_set = COCO2014('train', train_dir, train_anno, train_label, train_data_transform)
+        test_set = COCO2014('val', test_dir, test_anno, test_label, test_data_transform)
     elif  args.dataset == 'VG':
         train_set = VGDataset(train_dir, train_anno, train_data_transform, train_label)
         test_set = VGDataset(test_dir, test_anno, test_data_transform, test_label)

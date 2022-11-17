@@ -1,7 +1,7 @@
 import sys
 import os
-import shutil
 import time
+import json
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,7 +12,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 from utils.transforms import get_train_test_set
 from utils.metrics import AveragePrecisionMeter, voc12_mAP
-from model.models import SSGRL
+from model.models import SSCLIP
 from utils.checkpoint import save_code_file, save_checkpoint
 
 from tensorboardX import SummaryWriter
@@ -52,18 +52,18 @@ def main():
     train_label = args.train_label
     test_label = args.test_label
     train_loader, test_loader = get_train_test_set(train_data_dir,test_data_dir,train_list,test_list,train_label, test_label,args)
+    with open(args.category_file, 'r') as load_category:
+        category_map = json.load(load_category)
     logger.info("==> Done!\n")
 
     # load the network
     logger.info("==> Loading the network ...")
 
-    model = SSGRL(args=args,
-                    adjacency_matrix=args.graph_file,
+    model = SSCLIP(args=args,
                     word_features=args.word_file,
+                    classname=category_map,
                     num_classes=args.num_classes,
                     image_feature_dim=2048,
-                    output_dim=2048,
-                    time_step=3,
                     )
     model.cuda()
 
@@ -73,6 +73,7 @@ def main():
         p.requires_grad = False
 
     criterion = nn.BCEWithLogitsLoss(reduce=True, size_average=True).cuda()
+    # cross_entropy = nn.CrossEntropyLoss().cuda()
     optimizer = torch.optim.Adam(filter(lambda p : p.requires_grad, model.parameters()), lr=args.lr)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=args.step_epoch, gamma=0.1)
 
@@ -134,13 +135,16 @@ def train(train_loader, model, criterion, optimizer, epoch, args, writer):
     end = time.time()
     model.clip_model.eval()
     for i, (input, target) in enumerate(train_loader):
+        batchsize = input.shape[0]
         # measure data loading time
         data_time.update(time.time() - end)
         input, target = input.cuda(), target.float().cuda()
 
         # compute output
         output = model(input)
+
         loss = criterion(output, target)
+
         losses.update(loss.data, input.size(0))
 
         # compute gradient and do SGD step

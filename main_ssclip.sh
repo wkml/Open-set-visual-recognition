@@ -1,5 +1,5 @@
 #!/bin/bash
-post='CLIP-ATTEN-SSGRL-COCO'
+post='SSCLIP-withoutAttn-COCO'
 backbone_name='RN101'
 dataset='COCO'
 train_data_dir='/data/public/coco2014/train2014'
@@ -10,6 +10,10 @@ train_label='./data/coco/train_label_vectors.npy'
 test_label='./data/coco/val_label_vectors.npy'
 graph_file='./data/coco/prob_train.npy'
 word_file='./data/coco/vectors.npy'
+category_file='./data/coco/category_name.json'
+
+text_file='./data/coco/clip_text_feature.npy'
+
 batch_size=16
 epochs=20
 learning_rate=1e-5
@@ -56,3 +60,4 @@ CUDA_VISIBLE_DEVICES=${cuda} python main.py \
 --print_freq ${print_freq} \
 --post ${post} \
 --backbone_name $backbone_name \
+--text_file ${text_file}
