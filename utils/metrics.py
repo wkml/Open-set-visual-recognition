@@ -3,6 +3,43 @@ import numpy as np
 
 import torch
 
+def ComputeAP_VOC(recall, precision):
+    """Compute AP with VOC standard"""
+
+    rec, prec = np.concatenate(([0.], recall, [1.])), np.concatenate(([0.], precision, [0.]))
+    for index in range(prec.size-1, 0, -1):
+        prec[index-1] = np.maximum(prec[index-1], prec[index])        
+    index = np.where(rec[1:]!=rec[:-1])[0]
+    return np.sum((rec[index+1]-rec[index]) * prec[index+1])
+
+def Compute_mAP_VOC2012(prediction, classNum, seenIndex=None, unseenIndex=None):
+    """Compute mAP with VOC2012 standard"""
+
+    #with open(filePath, 'r') as f:
+    #    lines = f.readlines()
+    #seg = np.array([line.strip().split(' ') for line in lines]).astype(float)
+
+    Confidence, GroundTruth = prediction[:, :classNum], prediction[:, classNum:].astype(np.int32)
+    APs, TP, FP = [], np.zeros(GroundTruth.shape[0]), np.zeros(GroundTruth.shape[0])
+
+    for classId in range(classNum):
+
+        sortedLabel = [GroundTruth[index][classId] for index in np.argsort(-Confidence[:, classId])]
+        for index in range(GroundTruth.shape[0]):
+            TP[index], FP[index] = (sortedLabel[index]>0), (sortedLabel[index]<=0)
+
+        objectNum, TP, FP = sum(TP), np.cumsum(TP), np.cumsum(FP)
+        recall, precision = TP / float(objectNum), TP / np.maximum(TP + FP, np.finfo(np.float64).eps)
+        APs += [ComputeAP_VOC(recall, precision)]
+
+    np.set_printoptions(precision=3, suppress=True)
+    APs = np.array(APs)
+
+    if seenIndex==None and unseenIndex==None:
+        return np.mean(APs) # mAP for all
+    return np.mean(APs[seenIndex]), np.mean(APs[unseenIndex]), np.mean(APs) # mAP for base, mAP for novel, mAP for all
+
+
 def voc12_mAP(imagessetfile, num):
     with open(imagessetfile, 'r') as f:
         lines = f.readlines()
@@ -222,3 +259,39 @@ class AveragePrecisionMeter(object):
         CF1 = (2 * CP * CR) / (CP + CR)
 
         return OP, OR, OF1, CP, CR, CF1
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+
+
+def accuracy(output, target, topk=(1,)):
+    """Computes the precision@k for the specified values of k"""
+    maxk = max(topk)
+    batch_size = target.size(0)
+
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+    res = []
+    for k in topk:
+        correct_k = correct[:k].view(-1).float().sum(0)
+        res.append(correct_k.mul_(100.0 / batch_size))
+    return res
