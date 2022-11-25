@@ -4,4 +4,4 @@ module load anaconda/2020.11
 module load cuda/10.2
 source activate osvr
 #python 程序运行，需在.py 文件指定调用 GPU，并设置合适的线程数，batch_size大小等
-bash main.sh
+bash main_ssclip.sh

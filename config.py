@@ -75,6 +75,6 @@ def arg_parse():
                         help='backbone_name')
     parser.add_argument('--category_file', default="./data/coco/category_name.json",
                         help='class name of datasets')
-    parser.add_argument('--text_file', help='text_file')
+    # parser.add_argument('--text_file', help='text_file')
     args = parser.parse_args()
     return args

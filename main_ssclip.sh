@@ -1,5 +1,5 @@
 #!/bin/bash
-post='SSCLIP-withoutAttn-COCO'
+post='SSCLIP-withoutAttn-COCO-3.0'
 backbone_name='RN101'
 dataset='COCO'
 train_data_dir='/data/public/coco2014/train2014'
@@ -12,11 +12,9 @@ graph_file='./data/coco/prob_train.npy'
 word_file='./data/coco/vectors.npy'
 category_file='./data/coco/category_name.json'
 
-text_file='./data/coco/clip_text_feature.npy'
-
 batch_size=16
-epochs=20
-learning_rate=1e-5
+epochs=15
+learning_rate=1e-3
 momentum=0.9
 weight_decay=0
 num_classes=80
@@ -30,7 +28,7 @@ start_epoch=0
 #epoch number to decend lr
 step_epoch=10
 #print frequency (default: 10)
-print_freq=200
+print_freq=500
 #path to latest checkpoint (default: none)
 #resume="model_best_vgg_pretrain_bk.pth.tar"
 #resume="backup/86.26.pth.tar"
@@ -60,4 +58,3 @@ CUDA_VISIBLE_DEVICES=${cuda} python main.py \
 --print_freq ${print_freq} \
 --post ${post} \
 --backbone_name $backbone_name \
---text_file ${text_file}

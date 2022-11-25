@@ -68,14 +68,16 @@ def main():
     model.cuda()
 
     for p in model.parameters():
-        p.requires_grad = True
-    for p in model.clip_model.parameters():
         p.requires_grad = False
+    for p in model.word_semantic.parameters():
+        p.requires_grad = True
+    for p in model.fc.parameters():
+        p.requires_grad = True
 
     criterion = nn.BCEWithLogitsLoss(reduce=True, size_average=True).cuda()
     # cross_entropy = nn.CrossEntropyLoss().cuda()
     optimizer = torch.optim.Adam(filter(lambda p : p.requires_grad, model.parameters()), lr=args.lr)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=args.step_epoch, gamma=0.1)
+    # scheduler = lr_scheduler.StepLR(optimizer, step_size=args.step_epoch, gamma=0.1)
 
     if args.resume:
         if os.path.isfile(args.resume):
@@ -93,7 +95,7 @@ def main():
 
     if args.evaluate:
         with torch.no_grad():
-            validate(test_loader, model, criterion, 0, args)
+            validate(test_loader, model, criterion, args)
         return
 
     logger.info("Run Experiment...")
@@ -106,9 +108,9 @@ def main():
         # evaluate on validation set
         with torch.no_grad():
             # model eval mode
-            mAP = validate(test_loader, model, criterion, epoch, args)
+            mAP = validate(test_loader, model, criterion, args)
         
-        scheduler.step()
+        # scheduler.step()
         writer.add_scalar('mAP', mAP, epoch)
         
         # remember best prec@1 and save checkpoint
@@ -135,7 +137,6 @@ def train(train_loader, model, criterion, optimizer, epoch, args, writer):
     end = time.time()
     model.clip_model.eval()
     for i, (input, target) in enumerate(train_loader):
-        batchsize = input.shape[0]
         # measure data loading time
         data_time.update(time.time() - end)
         input, target = input.cuda(), target.float().cuda()
@@ -164,7 +165,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, writer):
                          loss=losses))
     writer.add_scalar('Loss', losses.avg, epoch)
 
-def validate(val_loader, model, criterion, epoch, args):
+def validate(val_loader, model, criterion, args):
     batch_time = AverageMeter()
     losses = AverageMeter()
     apMeter = AveragePrecisionMeter()
@@ -198,7 +199,7 @@ def validate(val_loader, model, criterion, epoch, args):
                    i, len(val_loader), batch_time=batch_time, loss=losses))
     x = torch.cat(x,0)
     x = x.cpu().detach().numpy()
-    np.savetxt(args.post+'_score', x)
+    np.savetxt(args.post + '_score', x)
     mAP=voc12_mAP(args.post+'_score', args.num_classes)
 
     averageAP = apMeter.value().mean()
