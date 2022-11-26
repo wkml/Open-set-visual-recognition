@@ -35,25 +35,22 @@ class SSCLIP(nn.Module):
 
     def forward(self, image):
         batch_size = image.size()[0]
-        # encoder attn
         # with attn
         # img_feature_map, _ = self.clip_model.encode_image(image.type(self.dtype))  #[bs, 512, H, W]
 
         # without attn
         img_feature_map = self.clip_model.encode_image(image.type(self.dtype))       #[bs, 2048, H, W]
-        # print("img_feature_map", img_feature_map.shape)
 
         # SD
         sd_features = self.word_semantic(batch_size,
                                          img_feature_map,
-                                         self.word_features)    # [bs, 80, 512]
-        sd_features = sd_features.reshape(-1, 1, self.num_classes * self.image_feature_dim)     # [bs, 1, 80 * 512]
+                                         self.word_features)    # [bs, 80, 2048]
+        sd_features = sd_features.reshape(-1, 1, self.num_classes * self.image_feature_dim)     # [bs, 1, 80 * 2048]
         sd_features = self.fc(sd_features)                      # [bs, 1, 512]
         text_features = self.text_features                      # [80, 512]
 
         sd_features = sd_features / sd_features.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-        # output = torch.cosine_similarity(sd_features, text_features, dim=-1) # [bs, 80]
 
         logits = sd_features @ text_features.t()
         

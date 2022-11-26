@@ -188,10 +188,9 @@ class AveragePrecisionMeter(object):
 
     @staticmethod
     def average_precision(output, target, difficult_examples=True):
-
         # Sort examples
         sorted, indices = torch.sort(output, dim=0, descending=True)
-
+        
         # Computes prec@i
         posCount, totalCount, avgPrecision = 0., 0., 0.
 

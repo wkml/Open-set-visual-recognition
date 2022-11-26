@@ -177,11 +177,13 @@ def validate(val_loader, model, criterion, args):
     # switch to evaluate mode
     model.eval()
     end = time.time()
-    x=[]
     for i, (input, target) in enumerate(val_loader):
         input, target = input.cuda(), target.float().cuda()
 
         output = model(input)
+
+        # print("output:",output[0])
+        # print("target:",target[0])
 
         loss = criterion(output, target)
         losses.update(loss.data, input.size(0))
