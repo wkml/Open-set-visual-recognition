@@ -62,12 +62,23 @@ class AttentionPool2d(nn.Module):
         self.v_proj = nn.Linear(embed_dim, embed_dim)
         self.c_proj = nn.Linear(embed_dim, output_dim or embed_dim)
         self.num_heads = num_heads
+        self.embed_dim = embed_dim
+        self.spacial_dim = spacial_dim
 
     def forward(self, x):
+        B, C, H, W = x.shape
         x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3]).permute(2, 0, 1)  # NCHW -> (HW)NC
         # [CLS]
         x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (HW+1)NC
-        x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
+
+        cls_pos = self.positional_embedding[0:1, :]
+        spatial_pos = F.interpolate(
+            self.positional_embedding[1:, ].reshape(1, self.spacial_dim, self.spacial_dim, self.embed_dim).permute(0, 3, 1, 2),
+            size=(H, W), mode='bilinear')
+        spatial_pos = spatial_pos.reshape(self.embed_dim, H * W).permute(1, 0)
+        positional_embedding = torch.cat([cls_pos, spatial_pos], dim=0)
+
+        x = x + positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
         x, _ = F.multi_head_attention_forward(
             query=x, key=x, value=x,
             embed_dim_to_check=x.shape[-1],
@@ -87,8 +98,11 @@ class AttentionPool2d(nn.Module):
             training=self.training,
             need_weights=False
         )
-        # [CLS]
-        return x[1:]
+
+        x = x.permute(1, 2, 0) # [B, C, H * W]
+        global_map = x[:, :, 0] # [B, C, 1]
+        feature_map = x[:, :, 1:].reshape(B, -1, H, W) # [B, C, H, W]
+        return feature_map, global_map
 
 
 class ModifiedResNet(nn.Module):
@@ -148,8 +162,8 @@ class ModifiedResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        # x = self.attnpool(x)
         x = self.global_avgpool(x)
+        # x = self.attnpool(x)
         return x
 
 

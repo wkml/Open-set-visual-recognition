@@ -1,4 +1,6 @@
 SSGRL-COCO_score
 CLIP-SSGRL-COCO_score
+CLIP-ATTEN-SSGRL-COCO_score
+SSCLIP-withoutAttn-COCO_score
 exp
 __pycache__
