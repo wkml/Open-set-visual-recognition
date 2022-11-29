@@ -1,5 +1,5 @@
 #!/bin/bash
-post='SSCLIP-withoutAttn-COCO-exp4.3'
+post='SSCLIP-withoutAttn-COCO-exp4.4'
 backbone_name='RN101'
 dataset='COCO'
 train_data_dir='/data/public/coco2014/train2014'

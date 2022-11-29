@@ -27,9 +27,11 @@ class SSCLIP(nn.Module):
         self.word_features = self.load_features(word_features)
 
         # self.fc_output = nn.Linear(2*self.image_feature_dim, self.output_dim)
-        # self.classifiers = Element_Wise_Layer(self.num_classes, self.image_feature_dim)
+        self.classifiers = Element_Wise_Layer(self.num_classes, self.image_feature_dim)
         # self.fc2 = nn.Linear(self.num_classes, 1)
         self.fc = nn.Linear(80 * self.image_feature_dim, 512)
+
+        self.temperature = nn.Parameter(torch.tensor(3.0, dtype=self.dtype))
 
 
 
@@ -52,7 +54,9 @@ class SSCLIP(nn.Module):
         sd_features = sd_features / sd_features.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
-        logits = sd_features @ text_features.t()
+        # ?
+        logits_scale = self.temperature.exp()
+        logits = logits_scale * sd_features @ text_features.t()
         
         return logits.squeeze()
     
